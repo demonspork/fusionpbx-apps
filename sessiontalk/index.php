@@ -31,7 +31,7 @@
 	require_once "resources/check_auth.php";
 
 //check permissions
-	if (permission_exists('sessiontalk_view')) {
+	if (permission_exists('sessiontalk_view') or permission_exists('sessiontalk_vew_all')) {
 		//access granted
 	}
 	else {
@@ -49,19 +49,19 @@
 	}
 
 //get the extension(s)
-	if (permission_exists('extension_edit')) {
+	if (permission_exists('sessiontalk_vew_all')) {
 		//admin user
-		$sql = "SELECT e.extension_uuid, e.extension, e.description, u.api_key, e.number_alias ";
-		$sql .= "FROM v_extensions AS e, v_extension_users AS eu, v_users AS u ";
+		$view_all = "fudge";
+		$sql = "SELECT e.extension_uuid, e.extension, e.description, e.number_alias ";
+		$sql .= "FROM v_extensions AS e ";
 		$sql .= "WHERE e.domain_uuid = :domain_uuid ";
 		$sql .= "AND e.enabled = 'true' ";
-		$sql .= "AND e.extension_uuid = eu.extension_uuid ";
-		$sql .= "AND eu.user_uuid = u.user_uuid ";
 		$sql .= "order by e.extension asc ";
 	}
 	else {
 		//normal user
-		$sql = "SELECT e.extension_uuid, e.extension, e.description, u.api_key, e.number_alias ";
+	    $view_all = "packer";
+		$sql = "SELECT e.extension_uuid, e.extension, e.description, e.number_alias ";
 		$sql .= "FROM v_extensions AS e, v_extension_users AS eu, v_users AS u ";
 		$sql .= "WHERE e.domain_uuid = :domain_uuid ";
 		$sql .= "AND eu.user_uuid = :user_uuid ";
@@ -69,10 +69,6 @@
 		$sql .= "AND eu.user_uuid = u.user_uuid ";
 		$sql .= "order by e.extension asc ";
 		
-//		$sql .= "where e.extension_uuid = eu.extension_uuid ";
-//		$sql .= "and e.domain_uuid = :domain_uuid ";
-//		$sql .= "and e.enabled = 'true' ";
-//		$sql .= "order by e.extension asc ";
 		$parameters['user_uuid'] = $_SESSION['user']['user_uuid'];
 	}
 	$parameters['domain_uuid'] = $_SESSION['domain_uuid'];
@@ -85,22 +81,33 @@
 	if (is_uuid($extension_uuid) && is_array($extensions) && @sizeof($extensions) != 0) {
 
 		//loop through get selected extension
-			if (is_array($extensions) && @sizeof($extensions) != 0) {
-				foreach ($extensions as $extension) {
-					if ($extension['extension_uuid'] == $extension_uuid) {
-						$field = $extension;
-						break;
-					}
+		if (is_array($extensions) && @sizeof($extensions) != 0) {
+			foreach ($extensions as $extension) {
+				if ($extension['extension_uuid'] == $extension_uuid) {
+					$field = $extension;
+					break;
 				}
 			}
+		}
 
 		//get the username
-			$username = $field['extension'];
-			if (isset($field['number_alias']) && strlen($field['number_alias']) > 0) {
-				$username = $field['number_alias'];
-			}
+		$username = $field['extension'];
+		if (isset($field['number_alias']) && strlen($field['number_alias']) > 0) {
+			$username = $field['number_alias'];
+		}
 
-			$qr_content = "scsc:". $username . "@" . $_SESSION['domain_name'] . ":". $field['api_key'] . ":" . $_SESSION['provision']['sessiontalk_provider_id']['text'];
+		//generate the single-use key
+		$sessiontalk_key = generate_password(32,3);
+
+		//store the key
+		$database = new database;
+		$database->table = "v_sessiontalk_keys";
+		$database->fields['sessiontalk_key'] = $sessiontalk_key;
+		$database->fields['extension_uuid'] = $field['extension_uuid'];
+		$database->fields['generated_date'] = date("U");
+		$database->add();
+
+		$qr_content = "scsc:provision:". $sessiontalk_key . ":" . $_SESSION['provision']['sessiontalk_provider_id']['text'];
 
 	}
 
@@ -125,7 +132,7 @@
 
 	echo $text['title_description-sessiontalk']."\n";
 	echo "<br /><br />\n";
-	//echo $qr_content;  //enable for debugging
+	echo "QR Content:".$view_all.":".$qr_content."<br>\n  ";  //enable for debugging
 	echo "<div style='text-align: center; white-space: nowrap; margin: 10px 0 40px 0;'>";
 	echo $text['label-extension']."<br />\n";
 	echo "<select name='id' class='formfld' onchange='this.form.submit();'>\n";
