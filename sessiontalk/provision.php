@@ -86,6 +86,9 @@ $reprovision = $_REQUEST['reprovision'];
 $password = $_REQUEST['password'];
 $device_id = $_REQUEST['deviceId'];
 
+if (!$reprovsion) {
+	$reprovision = "false";
+}
 
 //check the password and get the domain_uuid and domain name and extension details
 $sql = "select s.sessiontalk_key, s.generated_date, e.domain_uuid, d.domain_name, e.extension_uuid, e.extension, e.password, e.number_alias ";
@@ -204,21 +207,6 @@ $expiration = $sessiontalk_row['generated_date'] + $qr_expiration;
 
 
 
-
-
-// // get device lines for associated device
-// if (strlen($device_id) < 0 ) {
-//     $sql = "SELECT l.user_id, l.password, l.sip_transport, d.device_uuid ";
-//     $sql .= "FROM v_devices AS d, v_device_lines AS l, v_sessiontalk_devices as s ";
-//     $sql .= "WHERE s.sessiontalk_deviceid = :device_id ";
-//     $sql .= "AND s.device_uuid = d.device_uuid ";
-//     $sql .= "AND d.device_uuid = l.device_uuid ";
-//     $parameters['device_id'] = $device_id;
-//     $database = new database;
-//     $lines = $database->select($sql, $parameters, 'row');
-//     unset($sql, $parameters);
-// }
-
 //get activation count for the key
 $sql = "SELECT count(*) FROM v_sessiontalk_devices ";
 $sql .= "WHERE sessiontalk_key = :password ";
@@ -237,12 +225,14 @@ unset($sql, $parameters);
 
 
 
+
+
 if ($reprovision == "false" && strlen($device_id) > 0 && !count($activation) ) {
     //check for code expiration
     if (date("U") > $expiration){
         http_error("401","Key Expired");
     }
-    //check if code is already used
+    //check if key is already used
     if ($activations >= $max_activations) {
         http_error("403","");
     }
@@ -303,6 +293,10 @@ if ($reprovision == "false" && strlen($device_id) > 0 && !count($activation) ) {
     $array['devices'][0]['device_lines'][$y]['sip_transport'] =  $_SESSION['provision']['sessiontalk_transport']['text'];
     $array['devices'][0]['device_lines'][$y]['register_expires'] = $_SESSION['provision']['line_register_expires']['numeric'];
     
+    //cheat the permissions
+    $_SESSION["permissions"]['device_line_add'] = true;
+    $_SESSION["permissions"]['device_add'] = true;
+    
     //save the device
     $database = new database;
     $database->app_name = 'devices';
@@ -318,14 +312,10 @@ if ($reprovision == "false" && strlen($device_id) > 0 && !count($activation) ) {
     $database = new database;
     $database->execute($sql,$parameters);
     unset($sql, $parameters);
-        
-
-    
-
 	
 }
-elseif ($reprovision == "true" && strlen($device_id) > 0 && count($activation)) {
-	
+elseif (count($activation)) {
+    //($reprovision == "true") && (strlen($device_id) > 0) && 
 
 	//register that we have seen the device
 	$sql = "update v_devices ";

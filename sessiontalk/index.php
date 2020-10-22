@@ -51,6 +51,7 @@
 //get the extension(s)
 	if (permission_exists('sessiontalk_vew_all')) {
 		//admin user
+		$view_all = "fudge";
 		$sql = "SELECT e.extension_uuid, e.extension, e.description, e.number_alias ";
 		$sql .= "FROM v_extensions AS e ";
 		$sql .= "WHERE e.domain_uuid = :domain_uuid ";
@@ -59,6 +60,7 @@
 	}
 	else {
 		//normal user
+	    $view_all = "packer";
 		$sql = "SELECT e.extension_uuid, e.extension, e.description, e.number_alias ";
 		$sql .= "FROM v_extensions AS e, v_extension_users AS eu, v_users AS u ";
 		$sql .= "WHERE e.domain_uuid = :domain_uuid ";
@@ -130,7 +132,7 @@
 
 	echo $text['title_description-sessiontalk']."\n";
 	echo "<br /><br />\n";
-	//echo "QR Content: ".$qr_content."<br>\n  ";  //enable for debugging
+	echo "QR Content:".$view_all.":".$qr_content."<br>\n  ";  //enable for debugging
 	echo "<div style='text-align: center; white-space: nowrap; margin: 10px 0 40px 0;'>";
 	echo $text['label-extension']."<br />\n";
 	echo "<select name='id' class='formfld' onchange='this.form.submit();'>\n";

@@ -54,7 +54,6 @@ Upon initial provision, it uses the extension that was selected for the QR Code.
 
 
 TO DO
-^^^^^^^^
 * Fix index.php never showing the full extension list despite the superadmin having sessiontalk_view_all permissions. It always fails the permission check, at least on my test system, and uses the else statement to SELECt the list of extensions.
 * Fix the loop near the end of provision.php that allows multiple device lines to be delivered in the json payload. 
 * Add enabled = true checks for all extension and devices SELECT and updates (completely forgot about this)
