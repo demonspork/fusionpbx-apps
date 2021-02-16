@@ -88,7 +88,7 @@ Cloud Configuration
 Sign in to your https://cloud.sessiontalk.co.uk account and update various settings on your app.
 
 * Provisioning:
-* Set Login Fields to "Username, Passowrd, and Subdomain"
+* Set Login Fields to "Username, Password, and Subdomain"
 * Set the domain to "example.com" where "customer1.example.com" is the customer sudomains format.
 * Set the Incoming Calls mode to "Push" for most use cases.
 * Select your Region (I have had problems with the Auto Region setting)
